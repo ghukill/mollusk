@@ -1,2 +1,4 @@
-def hello() -> str:
-    return "Hello from mollusk!"
+import logging
+
+logger = logging.getLogger("mollusk")
+logger.setLevel(logging.INFO)

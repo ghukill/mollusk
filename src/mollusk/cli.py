@@ -5,22 +5,33 @@ from pathlib import Path
 
 import click
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()],
-)
-logger = logging.getLogger(__name__)
+from mollusk import logger
 
 
 @click.group()
-def main() -> None:
-    pass
+@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
+def main(*, verbose: bool) -> None:
+    """Mollusk CLI tool."""
+    # configure logging for CLI usage
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    handler.setFormatter(formatter)
+
+    # remove any existing handlers to avoid duplicate logging
+    logger.handlers.clear()
+    logger.addHandler(handler)
+
+    # set logging level
+    logger.setLevel(logging.INFO)
+    if verbose:
+        logger.setLevel(logging.DEBUG)
 
 
 @main.command()
 def ping() -> None:
-    """Debug command."""
+    """Ping/Pong."""
+    logger.info("debug pong")
+    logger.info("info pong")
     click.echo("pong, from mollusk")
 
 
