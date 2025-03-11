@@ -40,8 +40,10 @@ def init() -> None:
     """Initialize a new Mollusk repository."""
     project_path = Path.cwd()
     template_dir = files("mollusk.templates") / "new_project"
-    with as_file(template_dir) as src:
+    library_dir = files("mollusk")
+    with as_file(template_dir) as src, as_file(library_dir) as lib:
         shutil.copytree(src, project_path, dirs_exist_ok=True)
+        shutil.copy(lib / "settings.py", project_path)
     logger.info(f"New mollusk repository created at: '{project_path}'")
 
 
