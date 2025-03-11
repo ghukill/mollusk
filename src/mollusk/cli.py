@@ -1,3 +1,4 @@
+# mollusk/cli.py
 import logging
 import shutil
 from importlib.resources import as_file, files

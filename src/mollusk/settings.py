@@ -1,3 +1,4 @@
+# mollusk/settings.py
 """Mollusk repository settings."""
 
 import os

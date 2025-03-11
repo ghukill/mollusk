@@ -1,7 +1,10 @@
+# mollusk/__init__.py
 import importlib.util
 import logging
 import types
+from importlib import import_module
 from pathlib import Path
+from types import ModuleType
 
 logger = logging.getLogger("mollusk")
 logger.setLevel(logging.DEBUG)
@@ -16,16 +19,16 @@ if not logger.handlers:
 settings = None
 
 
-def _import_default_settings():
+def _import_default_settings() -> ModuleType:
     """Import the default settings module."""
     try:
-        return importlib.import_module("mollusk.settings")
-    except ImportError as e:
-        logger.error(f"Could not import default settings: {e}")
+        return import_module("mollusk.settings")
+    except ImportError:
+        logger.exception("Could not import default settings")
         raise
 
 
-def _find_repository_settings():
+def _find_repository_settings() -> ModuleType | None:
     """Look for settings.py in the current directory or parents."""
     cwd = Path.cwd()
 
@@ -43,7 +46,7 @@ def _find_repository_settings():
     return None
 
 
-def _import_settings_from_path(path):
+def _import_settings_from_path(path: Path) -> ModuleType | None:
     """Import settings from a path."""
     try:
         spec = importlib.util.spec_from_file_location("local_settings", path)
@@ -52,14 +55,14 @@ def _import_settings_from_path(path):
             spec.loader.exec_module(module)
             logger.debug(f"Loaded repository settings from {path}")
             return module
-    except Exception as e:
+    except ImportError as e:
         logger.warning(f"Error importing settings from {path}: {e}")
 
     return None
 
 
-# Load settings
-def _load_settings():
+def _load_settings() -> ModuleType:
+    """Load and merge settings from default and repository sources."""
     # First load default settings
     default_settings = _import_default_settings()
 
