@@ -1,4 +1,4 @@
-"""Mollusk repository settings"""
+"""Mollusk repository settings."""
 
 import os
 

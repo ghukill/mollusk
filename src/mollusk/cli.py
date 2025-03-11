@@ -13,38 +13,34 @@ from mollusk import logger
 def main(*, verbose: bool) -> None:
     """Mollusk CLI tool."""
     # configure logging for CLI usage
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    handler.setFormatter(formatter)
-
-    # remove any existing handlers to avoid duplicate logging
-    logger.handlers.clear()
-    logger.addHandler(handler)
-
-    # set logging level
-    logger.setLevel(logging.INFO)
     if verbose:
         logger.setLevel(logging.DEBUG)
+        logger.debug("Debug logging enabled")
 
 
 @main.command()
 def ping() -> None:
-    """Ping/Pong."""
-    logger.info("debug pong")
-    logger.info("info pong")
+    """Ping pong."""
+    logger.debug("pong, from mollusk")
+    logger.info("pong, from mollusk")
     click.echo("pong, from mollusk")
 
 
 @main.command()
-def init() -> None:
+@click.option("--location", "-l", default=".", help="Repository creation location")
+def init(*, location: str) -> None:
     """Initialize a new Mollusk repository."""
-    project_path = Path.cwd()
-    template_dir = files("mollusk.templates") / "new_project"
+    repository_path = Path(location).resolve()
+    # Create the directory if it doesn't exist
+    if not repository_path.exists():
+        logger.info(f"Creating directory: '{repository_path}'")
+        repository_path.mkdir(parents=True, exist_ok=True)
+    template_dir = files("mollusk.templates") / "new_repository"
     library_dir = files("mollusk")
     with as_file(template_dir) as src, as_file(library_dir) as lib:
-        shutil.copytree(src, project_path, dirs_exist_ok=True)
-        shutil.copy(lib / "settings.py", project_path)
-    logger.info(f"New mollusk repository created at: '{project_path}'")
+        shutil.copytree(src, repository_path, dirs_exist_ok=True)
+        shutil.copy(lib / "settings.py", repository_path)
+    logger.info(f"New mollusk repository created at: '{repository_path}'")
 
 
 if __name__ == "__main__":
