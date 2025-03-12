@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "click>=8.1.8",
+    "pyoxigraph>=0.4.9",
 ]
 
 [project.scripts]

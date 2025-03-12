@@ -170,6 +170,8 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+scratch/
+
 # AI experimental
 CLAUDE.md
 repomix-output.txt
