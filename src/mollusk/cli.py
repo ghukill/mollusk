@@ -13,7 +13,6 @@ from mollusk import logger
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 def main(*, verbose: bool) -> None:
     """Mollusk CLI tool."""
-    # configure logging for CLI usage
     if verbose:
         logger.setLevel(logging.DEBUG)
         logger.debug("Debug logging enabled")
@@ -32,15 +31,18 @@ def ping() -> None:
 def init(*, location: str) -> None:
     """Initialize a new Mollusk repository."""
     repository_path = Path(location).resolve()
-    # Create the directory if it doesn't exist
+
     if not repository_path.exists():
         logger.info(f"Creating directory: '{repository_path}'")
         repository_path.mkdir(parents=True, exist_ok=True)
+
     template_dir = files("mollusk.templates") / "new_repository"
     library_dir = files("mollusk")
+
     with as_file(template_dir) as src, as_file(library_dir) as lib:
         shutil.copytree(src, repository_path, dirs_exist_ok=True)
         shutil.copy(lib / "settings.py", repository_path)
+
     logger.info(f"New mollusk repository created at: '{repository_path}'")
 
 
