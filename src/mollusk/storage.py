@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-import datetime
+import base64
+import binascii
 import hashlib
 import os
 from typing import Literal
@@ -7,13 +8,6 @@ from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, TIMESTAMP, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
-
-
-
-Base = declarative_base()
 
 
 class Storage(ABC):
@@ -138,9 +132,6 @@ class S3Storage(Storage):
         This leverages S3's capability to calculate the checksum.
         Returns the checksum in hexdigest format.
         """
-        import base64
-        import binascii
-
         response = self.s3.copy_object(
             Bucket=self.bucket,
             Key=self.key,
@@ -161,9 +152,6 @@ class S3Storage(Storage):
 
         Returns the checksum in hexdigest format.
         """
-        import base64
-        import binascii
-
         head_response = self.s3.head_object(
             Bucket=self.bucket,
             Key=self.key,
@@ -179,92 +167,3 @@ class S3Storage(Storage):
             f"Object does not have a {algorithm} checksum: s3://{self.bucket}/{self.key}"
         )
         raise ValueError(error_msg)
-
-
-class Database:
-    """Provides database connectivity and operations."""
-
-    def __init__(self, db_path=None):
-        """
-        Initialize database connection.
-
-        Args:
-            db_path (str, optional): Path to the SQLite database file.
-                                    If None, uses default location.
-        """
-        if db_path is None:
-            db_path = os.path.join(os.path.expanduser("~"), ".mollusk", "database.sqlite")
-            os.makedirs(os.path.dirname(db_path), exist_ok=True)
-
-        self.db_path = db_path
-        self.engine = create_engine(f"sqlite:///{db_path}", echo=False)
-        self.Session = sessionmaker(bind=self.engine)
-
-    def create_tables(self):
-        """Create all tables defined in the models."""
-        Base.metadata.create_all(self.engine)
-
-    def get_session(self):
-        """Get a new database session."""
-        return self.Session()
-
-    def close(self):
-        """Close database connection."""
-        self.engine.dispose()
-
-
-class Item(Base):
-    """Database ORM model for Item."""
-
-    __tablename__ = 'item'
-
-    item_id = Column(String(255), primary_key=True)
-    title = Column(String(255))
-    created_date = Column(TIMESTAMP, default=datetime.datetime.utcnow)
-    updated_date = Column(TIMESTAMP, default=datetime.datetime.utcnow,
-                          onupdate=datetime.datetime.utcnow)
-
-    # Relationships
-    files = relationship("File", back_populates="item")
-
-
-class File(Base):
-    """Database ORM model for File."""
-
-    __tablename__ = 'file'
-
-    file_id = Column(String(36), primary_key=True)
-    item_id = Column(String(255), ForeignKey('item.item_id'))
-    filename = Column(String(255))
-    mimetype = Column(String(100))
-    created_date = Column(TIMESTAMP, default=datetime.datetime.utcnow)
-
-    # Relationships
-    item = relationship("Item", back_populates="files")
-    instances = relationship("FileInstance", back_populates="file")
-
-
-class FileInstance(Base):
-    """Database ORM model for FileInstance."""
-
-    __tablename__ = 'file_instance'
-
-    file_instance_id = Column(String(36), primary_key=True)
-    file_id = Column(String(36), ForeignKey('file.file_id'))
-    storage_class = Column(String(50))  # Storage type (posix, s3, etc.)
-    uri = Column(String(1024))
-    checksum = Column(String(1024))
-    size = Column(Integer)
-    created_date = Column(TIMESTAMP, default=datetime.datetime.utcnow)
-
-    # Relationships
-    file = relationship("File", back_populates="instances")
-
-    def get_storage(self):
-        if self.storage_class == "POSIXStorage":
-            storage = POSIXStorage(self.uri)
-        elif self.storage_class == "S3Storage":
-            storage = S3Storage(self.uri)
-        else:
-            raise ValueError(f"Storage class not recognized: {self.storage_class}")
-        return storage
